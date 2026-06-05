@@ -4,8 +4,56 @@
 
 > Reduced a 3-hour manual research workflow to under 2 minutes using a team of 4 AI agents.
 
+![Python](https://img.shields.io/badge/Python-3.11-blue)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green)
+![CrewAI](https://img.shields.io/badge/CrewAI-Latest-purple)
+![Docker](https://img.shields.io/badge/Docker-Ready-blue)
+![License](https://img.shields.io/badge/License-MIT-yellow)
 
+---
 
+## 📸 Screenshot
+
+![Multi-Agent Research Assistant UI](screenshot.png)
+
+---
+
+## ✨ Features
+
+- 🔍 **4 Specialized AI Agents** — Research, Analysis, Writing, and Review agents working in sequence
+- 🌐 **Real-time Web Search** — Tavily API for up-to-date information from the web
+- 📄 **PDF Ingestion with RAG** — Upload PDFs and use vector search to find the most relevant sections
+- 🧠 **Conversation Memory** — Agents remember past research and use it as context
+- 📊 **Citation Tracking** — Sources and references listed in every report
+- 💾 **Research History** — All past reports saved and viewable anytime
+- 📚 **PDF Library** — Track all uploaded PDFs
+- ⚙️ **Settings Page** — Configure LLM model, search results, and PDF limits
+- 📥 **Export Reports** — Download as PDF or Word document
+- 🚀 **FastAPI Backend** — Async endpoints supporting concurrent requests
+- 🐳 **Docker Ready** — Fully containerized for easy deployment
+- 🆓 **Completely Free** — Uses Groq free tier (100,000 tokens/day)
+
+---
+
+## 🏗 Architecture
+User Request
+↓
+FastAPI (port 8000)
+↓
+CrewAI Orchestrator
+↓
+┌──────────────────────────────────────────────────┐
+│  Research Agent → Analyst → Writer → Reviewer   │
+└──────────────────────────────────────────────────┘
+↓                    ↓
+Tavily Search          PDF RAG
+↓                    ↓
+Groq LLM (Llama 3.3 70B)
+↓
+Final Report (JSON + UI)
+---
+
+## 🛠 Tech Stack
 
 | Tool | Purpose |
 |---|---|
@@ -13,6 +61,8 @@
 | LangChain | LLM framework and tooling |
 | Groq (Llama 3.3 70B) | Fast, free LLM inference |
 | Tavily API | Real-time web search |
+| ChromaDB | Vector database for PDF RAG |
+| Sentence Transformers | PDF chunk embeddings |
 | FastAPI | Backend REST API |
 | Uvicorn | ASGI server |
 | Docker | Containerization |
@@ -40,8 +90,7 @@ cd research-assistant
 **2. Create and activate virtual environment:**
 ```bash
 python3.11 -m venv venv
-source venv/bin/activate  # Mac/Linux
-# venv\Scripts\activate   # Windows
+source venv/bin/activate
 ```
 
 **3. Install dependencies:**
@@ -64,7 +113,6 @@ uvicorn main:app --reload
 
 **6. Open in browser:**
 http://127.0.0.1:8000/ui
-
 ---
 
 ## 🐳 Docker Deployment
@@ -82,13 +130,8 @@ docker run -p 8000:8000 research-assistant
 **Open in browser:**
 http://127.0.0.1:8000/ui
 ---
-## 📸 Screenshot
-![Multi-Agent Research Assistant UI](screenshot.png)
----
 
 ## 📁 Project Structure
-
-```
 research-assistant/
 ├── main.py              # FastAPI server + endpoints
 ├── agents.py            # 4 CrewAI agent definitions
@@ -97,13 +140,12 @@ research-assistant/
 ├── config.py            # API keys + LLM configuration
 ├── export.py            # PDF + Word export generation
 ├── database.py          # Local JSON database for history
+├── rag.py               # RAG system for PDF processing
 ├── requirements.txt     # Python dependencies
 ├── Dockerfile           # Docker configuration
 ├── .gitignore           # Git ignore rules
 └── templates/
-    └── index.html       # Full web UI
-```
-
+└── index.html       # Full web UI
 ---
 
 ## 🔌 API Endpoints
@@ -146,6 +188,16 @@ curl -X POST http://localhost:8000/research \
 - Tested across **20+ research prompts**
 - Supports **concurrent requests** via async FastAPI endpoints
 - Average response time: **15-30 seconds** with Groq
+- PDF RAG processes documents of any size using vector search
+
+---
+
+## ⚠️ Limitations
+
+- **Free tier token limits** — Groq allows 100,000 tokens/day. Create multiple free accounts to rotate keys.
+- **Response time** — Reports take 15-30 seconds with Groq cloud. Local Ollama is slower (10-20 mins).
+- **Sources accuracy** — Agents use Tavily web search which may not always find the most authoritative sources.
+- **Internet required** — Tavily search needs internet. Offline mode uses only PDF content.
 
 ---
 
@@ -166,27 +218,16 @@ llm="ollama/mistral"
 
 ---
 
-## ⚠️ Limitations
-
-- **Free tier token limits** — Groq allows 100,000 tokens/day. Create multiple free accounts to rotate keys.
-- **Response time** — Reports take 15-30 seconds with Groq cloud. Local Ollama is slower (10-20 mins).
-- **Sources accuracy** — Agents use Tavily web search which may not always find the most authoritative sources.
-- **PDF size** — Large PDFs are truncated to 2,000 characters to stay within token limits.
-- **No memory** — Agents don't remember previous conversations. Each query starts fresh.
-- **Internet required** — Tavily search needs internet. Offline mode uses only PDF content.
-
----
----
-
-## 📝 License
-
-MIT License — feel free to use this project for learning and building!
-
----
-
 ## 🙏 Acknowledgements
 
 - [CrewAI](https://crewai.com) — amazing multi-agent framework
 - [Groq](https://groq.com) — incredibly fast free LLM inference
 - [Tavily](https://tavily.com) — best search API for AI agents
 - [FastAPI](https://fastapi.tiangolo.com) — modern Python web framework
+- [ChromaDB](https://www.trychroma.com) — simple local vector database
+
+---
+
+## 📝 License
+
+MIT License — feel free to use this project for learning and building!
