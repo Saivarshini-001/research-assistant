@@ -36,21 +36,24 @@
 ---
 
 ## 🏗 Architecture
+
+```
 User Request
-↓
+     ↓
 FastAPI (port 8000)
-↓
+     ↓
 CrewAI Orchestrator
-↓
-┌──────────────────────────────────────────────────┐
-│  Research Agent → Analyst → Writer → Reviewer   │
-└──────────────────────────────────────────────────┘
-↓                    ↓
-Tavily Search          PDF RAG
-↓                    ↓
-Groq LLM (Llama 3.3 70B)
-↓
-Final Report (JSON + UI)
+     ↓
++--------------------------------------------------+
+|  Research Agent → Analyst → Writer → Reviewer   |
++--------------------------------------------------+
+     ↓                    ↓
+Tavily Search          PDF RAG (ChromaDB)
+          ↓         ↓
+     Groq LLM (Llama 3.3 70B)
+               ↓
+     Final Report (JSON + UI)
+```
 ---
 
 ## 🛠 Tech Stack
@@ -130,22 +133,24 @@ docker run -p 8000:8000 research-assistant
 **Open in browser:**
 http://127.0.0.1:8000/ui
 ---
-
 ## 📁 Project Structure
+
+```
 research-assistant/
-├── main.py              # FastAPI server + endpoints
-├── agents.py            # 4 CrewAI agent definitions
-├── tasks.py             # Task definitions for each agent
-├── tools.py             # Tavily search + PDF reader tools
-├── config.py            # API keys + LLM configuration
-├── export.py            # PDF + Word export generation
-├── database.py          # Local JSON database for history
-├── rag.py               # RAG system for PDF processing
-├── requirements.txt     # Python dependencies
-├── Dockerfile           # Docker configuration
-├── .gitignore           # Git ignore rules
-└── templates/
-└── index.html       # Full web UI
+  main.py            - FastAPI server + endpoints
+  agents.py          - 4 CrewAI agent definitions
+  tasks.py           - Task definitions for each agent
+  tools.py           - Tavily search + PDF reader tools
+  config.py          - API keys + LLM configuration
+  export.py          - PDF + Word export generation
+  database.py        - Local JSON database for history
+  rag.py             - RAG system for PDF processing
+  requirements.txt   - Python dependencies
+  Dockerfile         - Docker configuration
+  .gitignore         - Git ignore rules
+  templates/
+    index.html       - Full web UI
+```
 ---
 
 ## 🔌 API Endpoints

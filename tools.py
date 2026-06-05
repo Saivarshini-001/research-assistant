@@ -12,13 +12,38 @@ def search_tool(query: str) -> str:
         results = tavily_client.search(
             query=query,
             search_depth="advanced",
-            max_results=5
+            max_results=5,
+            include_answer=True,
+            include_raw_content=False,
+            include_domains=[
+                "wikipedia.org",
+                "britannica.com",
+                "nature.com",
+                "pubmed.ncbi.nlm.nih.gov",
+                "scholar.google.com",
+                "ibm.com",
+                "microsoft.com",
+                "google.com",
+                "mckinsey.com",
+                "harvard.edu",
+                "mit.edu",
+                "stanford.edu",
+                "who.int",
+                "un.org",
+                "forbes.com",
+                "techcrunch.com"
+            ]
         )
         output = ""
-        for r in results["results"]:
-            output += f"\nSource: {r['url']}\n"
+        if results.get("answer"):
+            output += f"Quick Answer: {results['answer']}\n\n"
+        output += "Detailed Sources:\n"
+        for i, r in enumerate(results["results"], 1):
+            output += f"\nSource {i}:\n"
             output += f"Title: {r['title']}\n"
+            output += f"URL: {r['url']}\n"
             output += f"Content: {r['content']}\n"
+            output += f"Score: {r.get('score', 'N/A')}\n"
             output += "-" * 40 + "\n"
         return output
     except Exception as e:
