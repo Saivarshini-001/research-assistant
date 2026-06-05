@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Multi-Agent Research Assistant</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; color: #333; }
+    .sidebar { width: 220px; height: 100vh; background: #1a1a2e; position: fixed; left: 0; top: 0; display: flex; flex-direction: column; padding: 24px 16px; }
+    .sidebar .logo { display: flex; align-items: center; gap: 10px; margin-bottom: 32px; }
+    .sidebar .logo-icon { width: 36px; height: 36px; background: #4f46e5; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .sidebar .logo-text { color: white; font-size: 14px; font-weight: 600; line-height: 1.3; }
+    .sidebar nav a { display: flex; align-items: center; gap: 10px; color: #aaa; text-decoration: none; padding: 10px 12px; border-radius: 8px; font-size: 14px; margin-bottom: 4px; cursor: pointer; }
+    .sidebar nav a.active { background: #4f46e5; color: white; }
+    .sidebar nav a:hover:not(.active) { background: #2a2a4e; color: white; }
+    .status-box { margin-top: auto; background: #0f0f23; border-radius: 10px; padding: 14px; }
+    .status-box p { font-size: 12px; font-weight: 600; color: #aaa; margin-bottom: 8px; }
+    .status-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; }
+    .status-row span { font-size: 12px; color: #ccc; }
+    .main { margin-left: 220px; padding: 32px; min-height: 100vh; }
+    .page { display: none; }
+    .page.active { display: block; }
+    h1 { font-size: 26px; font-weight: 700; margin-bottom: 4px; }
+    .subtitle { color: #888; font-size: 14px; margin-bottom: 28px; }
+    .input-row { display: flex; gap: 12px; background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin-bottom: 24px; align-items: center; }
+    .input-row input[type="text"] { flex: 1; border: none; outline: none; font-size: 15px; color: #333; background: transparent; }
+    .upload-label { display: flex; align-items: center; gap: 6px; background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px 14px; font-size: 13px; cursor: pointer; color: #555; white-space: nowrap; }
+    #file-name { font-size: 12px; color: #888; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .run-btn { background: #4f46e5; color: white; border: none; border-radius: 8px; padding: 10px 20px; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+    .run-btn:disabled { background: #a5b4fc; cursor: not-allowed; }
+    .status-card { background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; margin-bottom: 24px; display: none; }
+    .status-card.show { display: block; }
+    .status-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .badge { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+    .badge.running { background: #fef3c7; color: #92400e; }
+    .badge.completed { background: #dcfce7; color: #166534; }
+    .badge.error { background: #fee2e2; color: #991b1b; }
+    .agents-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .agent-chip { display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 20px; font-size: 13px; background: #f3f4f6; color: #555; }
+    .agent-chip.done { background: #dcfce7; color: #166534; }
+    .agent-chip.active { background: #fef3c7; color: #92400e; }
+    .arrow { color: #ccc; font-size: 16px; }
+    .tabs { display: flex; border-bottom: 1px solid #e5e7eb; margin-bottom: 20px; }
+    .tab { padding: 10px 20px; font-size: 14px; color: #888; cursor: pointer; border-bottom: 2px solid transparent; }
+    .tab.active { color: #4f46e5; border-bottom: 2px solid #4f46e5; font-weight: 600; }
+    .report-card { background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 24px; display: none; }
+    .report-card.show { display: block; }
+    .report-content { font-size: 14px; line-height: 1.8; color: #333; }
+    .report-content h1 { font-size: 20px; font-weight: 700; margin: 20px 0 8px; color: #111; }
+    .report-content h2 { font-size: 17px; font-weight: 700; margin: 20px 0 8px; color: #111; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+    .report-content h3 { font-size: 15px; font-weight: 600; margin: 16px 0 6px; color: #111; }
+    .report-content ul { margin: 4px 0 4px 20px; }
+    .report-content li { margin: 1px 0; color: #444; }
+    .report-content p { margin: 4px 0; }
+    .report-content strong { font-weight: 600; }
+    .report-content a { color: #4f46e5; }
+    .export-row { display: flex; gap: 12px; margin-top: 20px; padding-top: 16px; border-top: 1px solid #e5e7eb; }
+    .export-btn { display: inline-flex; align-items: center; gap: 6px; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: 600; }
+    .export-btn.pdf { background: #4f46e5; color: white; }
+    .export-btn.docx { background: #059669; color: white; }
+    .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; vertical-align: middle; margin-right: 6px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .sources-list { list-style: none; padding: 0; }
+    .sources-list li { padding: 12px 0; border-bottom: 1px solid #f3f4f6; font-size: 13px; }
+    .sources-list li a { color: #4f46e5; text-decoration: none; word-break: break-all; }
+    .sources-list li .source-name { font-weight: 500; color: #333; display: block; margin-bottom: 2px; }
+    .card { background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+    .card h3 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+    .card p { font-size: 13px; color: #888; margin-bottom: 8px; }
+    .card .meta { font-size: 12px; color: #aaa; }
+    .card-btn { background: #4f46e5; color: white; border: none; border-radius: 6px; padding: 6px 14px; font-size: 13px; cursor: pointer; }
+    .empty-state { text-align: center; padding: 60px 20px; color: #888; }
+    .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
+    .settings-form label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #333; }
+    .settings-form input, .settings-form select { width: 100%; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 14px; margin-bottom: 16px; outline: none; }
+    .settings-form input:focus { border-color: #4f46e5; }
+    .save-btn { background: #4f46e5; color: white; border: none; border-radius: 8px; padding: 10px 24px; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .about-card { background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 32px; }
+    .about-card h2 { font-size: 20px; font-weight: 700; margin-bottom: 8px; color: #4f46e5; }
+    .about-card p { font-size: 14px; color: #555; line-height: 1.8; margin-bottom: 16px; }
+    .tech-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 16px; }
+    .tech-item { background: #f3f4f6; border-radius: 8px; padding: 12px; text-align: center; font-size: 13px; font-weight: 500; }
+  </style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="logo">
+    <div class="logo-icon">🤖</div>
+    <div class="logo-text">Multi-Agent<br>Research Assistant</div>
+  </div>
+  <nav>
+    <a href="#" class="active" onclick="showPage('new-research', this)">🔍 New Research</a>
+    <a href="#" onclick="showPage('past-research', this)">📁 Past Research</a>
+    <a href="#" onclick="showPage('pdf-library', this)">📄 PDF Library</a>
+    <a href="#" onclick="showPage('settings', this)">⚙️ Settings</a>
+    <a href="#" onclick="showPage('about', this)">ℹ️ About</a>
+  </nav>
+  <div class="status-box">
+    <p>SYSTEM STATUS</p>
+    <div class="status-row"><div class="dot"></div><span>API: Online</span></div>
+    <div class="status-row"><div class="dot"></div><span>Groq: Connected</span></div>
+    <div class="status-row"><div class="dot"></div><span>Tavily: Connected</span></div>
+    <div class="status-row"><div class="dot"></div><span>LLM: Ready</span></div>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- NEW RESEARCH PAGE -->
+  <div class="page active" id="page-new-research">
+    <h1>Multi-Agent Research Assistant</h1>
+    <p class="subtitle">Powered by CrewAI, LangChain, Groq, Tavily</p>
+    <div class="input-row">
+      <input type="text" id="query" placeholder="Enter your research topic..." />
+      <label class="upload-label" for="pdf-file">📎 Upload PDF</label>
+      <input type="file" id="pdf-file" accept=".pdf" style="display:none" />
+      <span id="file-name">No file</span>
+      <button class="run-btn" id="run-btn">▶ Run Research</button>
+    </div>
+    <div class="status-card" id="status-card">
+      <div class="status-top">
+        <div>
+          <div style="font-size:13px;color:#888;">Research Status</div>
+          <div style="font-size:15px;font-weight:700;margin-top:4px;" id="status-text">Running...</div>
+          <div style="font-size:12px;color:#888;margin-top:2px;" id="time-text"></div>
+        </div>
+        <span class="badge running" id="status-badge">Running</span>
+      </div>
+      <div class="agents-row">
+        <div class="agent-chip" id="chip-research">🔍 Research Agent</div>
+        <span class="arrow">→</span>
+        <div class="agent-chip" id="chip-analysis">🧠 Analysis Agent</div>
+        <span class="arrow">→</span>
+        <div class="agent-chip" id="chip-writing">✍️ Writing Agent</div>
+        <span class="arrow">→</span>
+        <div class="agent-chip" id="chip-review">🔎 Review Agent</div>
+      </div>
+    </div>
+    <div class="report-card" id="report-card">
+      <div class="tabs">
+        <div class="tab active" id="tab-btn-report">Research Report</div>
+        <div class="tab" id="tab-btn-sources">Sources & Citations</div>
+      </div>
+      <div id="tab-report">
+        <div class="report-content" id="report-content"></div>
+      </div>
+      <div id="tab-sources" style="display:none">
+        <ul class="sources-list" id="sources-list"></ul>
+      </div>
+      <div class="export-row">
+        <a href="/export/pdf" target="_blank" class="export-btn pdf">📄 Download PDF</a>
+        <a href="/export/docx" target="_blank" class="export-btn docx">📝 Download Word</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAST RESEARCH PAGE -->
+  <div class="page" id="page-past-research">
+    <h1>Past Research</h1>
+    <p class="subtitle">All your previous research reports</p>
+    <div id="history-list"></div>
+  </div>
+
+  <!-- PDF LIBRARY PAGE -->
+  <div class="page" id="page-pdf-library">
+    <h1>PDF Library</h1>
+    <p class="subtitle">All PDFs you have uploaded</p>
+    <div id="pdf-list"></div>
+  </div>
+
+  <!-- SETTINGS PAGE -->
+  <div class="page" id="page-settings">
+    <h1>Settings</h1>
+    <p class="subtitle">Configure your research assistant</p>
+    <div class="card">
+      <div class="settings-form">
+        <label>LLM Model</label>
+        <select id="setting-model">
+          <option value="groq/llama-3.3-70b-versatile">Groq — Llama 3.3 70B</option>
+          <option value="gemini/gemini-2.0-flash">Gemini — 2.0 Flash</option>
+          <option value="ollama/mistral">Ollama — Mistral (local)</option>
+        </select>
+        <label>Max Web Search Results</label>
+        <select id="setting-results">
+          <option value="3">3 results</option>
+          <option value="5" selected>5 results</option>
+          <option value="8">8 results</option>
+        </select>
+        <label>Max PDF Characters</label>
+        <select id="setting-pdf">
+          <option value="1000">1,000 chars</option>
+          <option value="2000" selected>2,000 chars</option>
+          <option value="4000">4,000 chars</option>
+        </select>
+        <button class="save-btn" onclick="saveSettings()">💾 Save Settings</button>
+        <span id="settings-saved" style="display:none;margin-left:12px;color:#059669;font-size:13px;">✓ Saved!</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ABOUT PAGE -->
+  <div class="page" id="page-about">
+    <h1>About</h1>
+    <p class="subtitle">Multi-Agent Research Assistant</p>
+    <div class="about-card">
+      <h2>🤖 Multi-Agent Research Assistant</h2>
+      <p>This app uses a team of 4 AI agents powered by CrewAI to automatically research any topic, analyse findings, write a structured report, and review it for accuracy — all in under 2 minutes.</p>
+      <p><strong>How it works:</strong> You enter a research topic, and the 4 agents work in sequence — the Researcher finds information using Tavily web search, the Analyst extracts key insights, the Writer creates a structured report, and the Reviewer polishes the final output.</p>
+      <p><strong>Built with:</strong></p>
+      <div class="tech-grid">
+        <div class="tech-item">🤖 CrewAI</div>
+        <div class="tech-item">🔗 LangChain</div>
+        <div class="tech-item">⚡ Groq LLM</div>
+        <div class="tech-item">🔍 Tavily Search</div>
+        <div class="tech-item">🚀 FastAPI</div>
+        <div class="tech-item">🐳 Docker</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function showPage(page, el) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.sidebar nav a').forEach(a => a.classList.remove('active'));
+    document.getElementById('page-' + page).classList.add('active');
+    el.classList.add('active');
+    if (page === 'past-research') loadHistory();
+    if (page === 'pdf-library') loadPDFs();
+    if (page === 'settings') loadSettings();
+  }
+
+  async function loadHistory() {
+    var res = await fetch('/history');
+    var data = await res.json();
+    var container = document.getElementById('history-list');
+    if (data.length === 0) {
+      container.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>No research history yet.<br>Run your first research query!</p></div>';
+      return;
+    }
+    container.innerHTML = data.reverse().map(function(item) {
+      return '<div class="card">' +
+        '<h3>' + item.query + '</h3>' +
+        '<p>' + item.report.substring(0, 150).replace(/[#*]/g, '') + '...</p>' +
+        '<div class="meta">📅 ' + item.date + ' &nbsp;|&nbsp; ⏱ ' + item.time_taken + '</div>' +
+        '<br><button class="card-btn" onclick="viewReport(' + item.id + ')">View Report</button>' +
+        '</div>';
+    }).join('');
+  }
+
+  async function viewReport(id) {
+    var res = await fetch('/history/' + id);
+    var data = await res.json();
+    document.getElementById('query').value = data.query;
+    document.getElementById('report-content').innerHTML = renderMarkdown(data.report);
+    document.getElementById('report-card').classList.add('show');
+    document.getElementById('status-card').classList.remove('show');
+    showPage('new-research', document.querySelector('.sidebar nav a'));
+  }
+
+  async function loadPDFs() {
+    var res = await fetch('/pdfs');
+    var data = await res.json();
+    var container = document.getElementById('pdf-list');
+    if (data.length === 0) {
+      container.innerHTML = '<div class="empty-state"><div class="icon">📄</div><p>No PDFs uploaded yet.<br>Upload a PDF when running research!</p></div>';
+      return;
+    }
+    container.innerHTML = data.reverse().map(function(item) {
+      return '<div class="card">' +
+        '<h3>📄 ' + item.filename + '</h3>' +
+        '<p>' + item.preview + '...</p>' +
+        '<div class="meta">📅 ' + item.date + '</div>' +
+        '</div>';
+    }).join('');
+  }
+
+  async function loadSettings() {
+    var res = await fetch('/settings');
+    var data = await res.json();
+    if (data.model) document.getElementById('setting-model').value = data.model;
+    if (data.max_results) document.getElementById('setting-results').value = data.max_results;
+    if (data.max_pdf_chars) document.getElementById('setting-pdf').value = data.max_pdf_chars;
+  }
+
+  async function saveSettings() {
+    var settings = {
+      model: document.getElementById('setting-model').value,
+      max_results: parseInt(document.getElementById('setting-results').value),
+      max_pdf_chars: parseInt(document.getElementById('setting-pdf').value)
+    };
+    await fetch('/settings', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(settings)
+    });
+    var saved = document.getElementById('settings-saved');
+    saved.style.display = 'inline';
+    setTimeout(function() { saved.style.display = 'none'; }, 2000);
+  }
+
+  document.getElementById('pdf-file').addEventListener('change', function() {
+    document.getElementById('file-name').textContent = this.files[0] ? this.files[0].name : 'No file';
+  });
+
+  document.getElementById('tab-btn-report').addEventListener('click', function() {
+    document.getElementById('tab-btn-report').classList.add('active');
+    document.getElementById('tab-btn-sources').classList.remove('active');
+    document.getElementById('tab-report').style.display = 'block';
+    document.getElementById('tab-sources').style.display = 'none';
+  });
+
+  document.getElementById('tab-btn-sources').addEventListener('click', function() {
+    document.getElementById('tab-btn-sources').classList.add('active');
+    document.getElementById('tab-btn-report').classList.remove('active');
+    document.getElementById('tab-sources').style.display = 'block';
+    document.getElementById('tab-report').style.display = 'none';
+  });
+
+  function renderMarkdown(text) {
+    var html = text
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+      .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+      .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+      .replace(/^\* (.+)$/gm, '<li>$1</li>')
+      .replace(/^(\d+)\. (.+)$/gm, '<li><strong>$1.</strong> $2</li>')
+      .replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank">$1</a>')
+      .replace(/\n\n/g, '</p><p>')
+      .replace(/\n/g, '<br>');
+    return '<p>' + html + '</p>';
+  }
+
+  function parseSources(text) {
+    var sources = [];
+    var lines = text.split('\n');
+    var inReferences = false;
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i].trim();
+      if (line.match(/##\s*References/i) || line.match(/\*\*References\*\*/i) || line.match(/##\s*Sources/i)) {
+        inReferences = true;
+        continue;
+      }
+      if (inReferences && line.startsWith('##')) break;
+      if (inReferences && line.length > 5) {
+        var clean = line.replace(/^\*\s+/, '').replace(/^\d+\.\s+/, '').trim();
+        var urlMatch = clean.match(/(https?:\/\/[^\s]+)/);
+        var name = clean.replace(/(https?:\/\/[^\s]+)/, '').replace(/-\s*$/, '').trim();
+        if (clean.length > 5) {
+          sources.push({ name: name || clean, url: urlMatch ? urlMatch[1] : null });
+        }
+      }
+    }
+    return sources;
+  }
+
+  document.getElementById('run-btn').addEventListener('click', async function() {
+    var query = document.getElementById('query').value.trim();
+    if (!query) { alert('Please enter a research topic!'); return; }
+
+    var btn = document.getElementById('run-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Running...';
+
+    document.getElementById('status-card').classList.add('show');
+    document.getElementById('report-card').classList.remove('show');
+
+    ['research','analysis','writing','review'].forEach(function(a) {
+      document.getElementById('chip-' + a).className = 'agent-chip';
+    });
+
+    document.getElementById('chip-research').classList.add('active');
+    document.getElementById('status-badge').className = 'badge running';
+    document.getElementById('status-badge').textContent = 'Running';
+    document.getElementById('status-text').textContent = 'Running...';
+
+    var startTime = Date.now();
+    var timer = setInterval(function() {
+      var s = Math.floor((Date.now() - startTime) / 1000);
+      document.getElementById('time-text').textContent = 'Time elapsed: ' + Math.floor(s/60) + 'm ' + (s%60) + 's';
+    }, 1000);
+
+    setTimeout(function() { document.getElementById('chip-research').classList.replace('active','done'); }, 2000);
+    setTimeout(function() { document.getElementById('chip-analysis').classList.add('active'); }, 3000);
+    setTimeout(function() { document.getElementById('chip-analysis').classList.replace('active','done'); }, 5000);
+    setTimeout(function() { document.getElementById('chip-writing').classList.add('active'); }, 6000);
+    setTimeout(function() { document.getElementById('chip-writing').classList.replace('active','done'); }, 8000);
+    setTimeout(function() { document.getElementById('chip-review').classList.add('active'); }, 9000);
+
+    try {
+      var formData = new FormData();
+      formData.append('query', query);
+      var pdfFile = document.getElementById('pdf-file').files[0];
+      if (pdfFile) formData.append('pdf', pdfFile);
+
+      var res = await fetch('/research', { method: 'POST', body: formData });
+      var data = await res.json();
+
+      clearInterval(timer);
+      document.getElementById('chip-review').classList.replace('active','done');
+      document.getElementById('status-text').textContent = data.status === 'error' ? 'Error occurred' : 'Completed';
+      document.getElementById('time-text').textContent = 'Time taken: ' + data.time_taken;
+      document.getElementById('status-badge').className = 'badge ' + (data.status === 'error' ? 'error' : 'completed');
+      document.getElementById('status-badge').textContent = data.status === 'error' ? 'Error' : 'Completed';
+
+      document.getElementById('report-content').innerHTML = renderMarkdown(data.report);
+      document.getElementById('report-card').classList.add('show');
+
+      var sources = parseSources(data.report);
+      var sourcesList = document.getElementById('sources-list');
+      sourcesList.innerHTML = sources.length > 0
+        ? sources.map(function(s) {
+            return '<li><span class="source-name">' + s.name + '</span>' +
+              (s.url ? '<a href="' + s.url + '" target="_blank">' + s.url + '</a>' : '') + '</li>';
+          }).join('')
+        : '<li><span class="source-name">Sources are embedded in the report text above.</span></li>';
+
+    } catch(err) {
+      clearInterval(timer);
+      document.getElementById('status-text').textContent = 'Error occurred';
+      alert('Something went wrong: ' + err.message);
+    }
+
+    btn.disabled = false;
+    btn.innerHTML = '▶ Run Research';
+  });
+</script>
+
+</body>
+</html>
