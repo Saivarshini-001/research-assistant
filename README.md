@@ -9,6 +9,32 @@
 ![CrewAI](https://img.shields.io/badge/CrewAI-Latest-purple)
 ![Docker](https://img.shields.io/badge/Docker-Ready-blue)
 ![License](https://img.shields.io/badge/License-MIT-yellow)
+---
+## 📋 Summary
+
+This project is a **Multi-Agent Research Assistant** that automates the entire research workflow using 4 specialized AI agents. Instead of spending hours manually searching, reading, and writing research reports, this tool does it all in under 2 minutes.
+---
+### How it works
+1. **You** enter a research topic (and optionally upload a PDF)
+2. **Research Agent** searches the web using Tavily and reads your PDF using RAG
+3. **Analysis Agent** extracts the top 5 key themes and insights
+4. **Writing Agent** produces a structured professional report with all sections
+5. **Review Agent** checks for accuracy, missing points and polishes the final output
+6. **You** get a complete report with citations — downloadable as PDF or Word
+---
+### What makes it special
+- Uses **RAG (Retrieval Augmented Generation)** to process large PDFs intelligently
+- Has **conversation memory** — agents remember your past research
+- Saves everything to a **local database** — research history and PDF library
+- Fully **containerized with Docker** — runs anywhere
+- Built with **production-grade tools** — FastAPI, CrewAI, LangChain
+- **100% free** to run using Groq free tier and Tavily free tier
+---
+### Built for
+- Students who need to research and write reports quickly
+- Professionals who need fast summaries of documents and topics
+- Developers learning how to build multi-agent AI systems
+- Anyone who wants to save hours of manual research time
 
 ---
 
